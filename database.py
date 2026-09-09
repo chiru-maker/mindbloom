@@ -11,6 +11,7 @@ IMPORTANT: This prototype does NOT store any medical information.
 Only simple activity/game data is stored to power progress tracking.
 """
 
+import hashlib
 import sqlite3
 import os
 import random
@@ -26,6 +27,17 @@ def get_connection():
     return conn
 
 
+def hash_password(password: str) -> str:
+    """Hash a password using SHA-256 with salt for security."""
+    salt = "mindbloom_liquid_glass_salt"
+    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Check if password matches hash."""
+    return hash_password(password) == hashed
+
+
 def init_db():
     """
     Create the database file and all required tables if they do not
@@ -38,6 +50,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            password_hash TEXT,
             age INTEGER,
             language TEXT DEFAULT 'English',
             difficulty TEXT DEFAULT 'Easy',
@@ -45,6 +59,17 @@ def init_db():
             created_at TEXT
         )
     """)
+
+    # Non-destructive migrations for existing DB instances
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+    except sqlite3.OperationalError:
+        pass
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS game_results (
@@ -85,8 +110,59 @@ def init_db():
 
 
 # ---------------------------------------------------------------------
-# USER FUNCTIONS
+# USER & AUTHENTICATION FUNCTIONS
 # ---------------------------------------------------------------------
+
+def get_user_by_email(email):
+    """Return user by email address (case-insensitive) or None."""
+    if not email:
+        return None
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE LOWER(email) = ?", (email.strip().lower(),))
+    row = cur.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def register_user(email, password, name=None, age=70, language="English", difficulty="Easy", daily_goal=3):
+    """Register a new user with Email + Password."""
+    cleaned_email = email.strip().lower()
+    if not name or name.strip() == "":
+        name = cleaned_email.split("@")[0].capitalize()
+    
+    pwd_hash = hash_password(password)
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (name, email, password_hash, age, language, difficulty, daily_goal, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (name.strip(), cleaned_email, pwd_hash, age, language, difficulty, daily_goal, datetime.now().isoformat()))
+    conn.commit()
+    user_id = cur.lastrowid
+    
+    # Create default reminder row
+    cur.execute("""
+        INSERT INTO reminders (user_id, reminder_time, enabled)
+        VALUES (?, ?, ?)
+    """, (user_id, "09:00", 0))
+    conn.commit()
+    conn.close()
+    return user_id
+
+
+def authenticate_user(email, password):
+    """Authenticate a user using Email and Password. Returns user dict or None."""
+    if not email or not password:
+        return None
+    user = get_user_by_email(email)
+    if not user or not user.get("password_hash"):
+        return None
+    if verify_password(password, user["password_hash"]):
+        return user
+    return None
+
 
 def create_user(name, age, language="English", difficulty="Easy", daily_goal=3):
     """Add a new user profile and return the new user's id."""

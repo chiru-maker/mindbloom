@@ -50,6 +50,9 @@ DEFAULTS = {
     "active_game": None,
     "caregiver_unlocked": False,
     "last_difficulty_note": None,
+    "auth_mode": "login",
+    "auth_show_password": False,
+    "auth_error": None,
 }
 for key, value in DEFAULTS.items():
     if key not in st.session_state:
@@ -62,52 +65,194 @@ def lang():
     return utils.safe_get(user, "language", "English")
 
 
-# Apply theming for every page
-utils.apply_custom_style(
-    font_size=st.session_state.font_size,
-    high_contrast=st.session_state.high_contrast,
-)
-
-
 # =======================================================================
-# PROFILE / LOGIN SCREEN
+# LIQUID GLASS AUTHENTICATION (LOGIN & SIGN UP)
 # =======================================================================
 
-def render_profile_selector():
-    st.markdown(f"<h1 class='mb-center'>🌸 {_t('app_name')}</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p class='mb-center mb-muted'>{_t('tagline')}</p>", unsafe_allow_html=True)
-    st.info("This is a hackathon prototype for education and engagement only. "
-            "It does not diagnose or treat any medical condition.")
+def render_auth_page():
+    """
+    Renders the ultra-premium Liquid Glass / Glassmorphism Authentication UI.
+    Strictly uses Email + Password for both Login and Sign Up.
+    """
+    utils.apply_liquid_glass_auth_style()
 
-    users = db.get_all_users()
+    auth_mode = st.session_state.get("auth_mode", "login")
+    show_pw = st.session_state.get("auth_show_password", False)
+    error_msg = st.session_state.get("auth_error", None)
 
-    if users:
-        utils.card_start()
-        st.subheader("👋 Select Your Profile")
-        for u in users:
-            if st.button(f"{u['name']}  (Age {u['age']})", key=f"select_user_{u['id']}", use_container_width=True):
-                st.session_state.user_id = u["id"]
-                st.session_state.page = "Home"
-                st.rerun()
-        utils.card_end()
+    st.markdown('<div class="mb-auth-wrapper"><div class="mb-glass-panel">', unsafe_allow_html=True)
 
-    utils.card_start()
-    st.subheader(f"✨ {_t('create_profile')}")
-    with st.form("create_profile_form", clear_on_submit=True):
-        name = st.text_input("Your Name")
-        age = st.number_input("Your Age", min_value=40, max_value=110, value=70, step=1)
-        language = st.selectbox("Preferred Language", ["English", "Hindi", "Kannada"])
-        daily_goal = st.slider("Daily Goal (games per day)", 1, 5, 3)
-        submitted = st.form_submit_button("🌸 Create My Profile", use_container_width=True)
-        if submitted:
-            if name.strip() == "":
-                st.warning("Please enter your name to continue.")
-            else:
-                new_id = db.create_user(name.strip(), int(age), language, "Easy", daily_goal)
-                st.session_state.user_id = new_id
-                st.session_state.page = "Home"
-                st.rerun()
-    utils.card_end()
+    # Floating Glowing Brand Header
+    st.markdown("""
+    <div class="mb-center">
+        <div class="mb-brand-badge">
+            <span class="mb-brand-logo">🌸</span>
+            <span class="mb-brand-title">MindBloom</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ------------------------------------------------------------------
+    # LOGIN VIEW
+    # ------------------------------------------------------------------
+    if auth_mode == "login":
+        st.markdown("""
+        <div class="mb-center">
+            <h1 class="mb-auth-heading">Welcome Back</h1>
+            <p class="mb-auth-subheading">Sign in to continue</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if error_msg:
+            st.markdown(f"""
+            <div class="mb-glass-error">
+                <span>⚠️</span>
+                <span>{error_msg}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with st.form("liquid_glass_login_form", clear_on_submit=False):
+            email = st.text_input(
+                "Email",
+                placeholder="name@example.com",
+                key="input_login_email",
+            ).strip()
+
+            password = st.text_input(
+                "Password",
+                type="default" if show_pw else "password",
+                placeholder="Enter your password",
+                key="input_login_password",
+            )
+
+            show_pw_toggle = st.checkbox(
+                "👁️ Show Password",
+                value=show_pw,
+                key="toggle_login_pw",
+            )
+
+            submitted = st.form_submit_button("Log In", use_container_width=True)
+
+            if submitted:
+                # Update password visibility preference
+                st.session_state.auth_show_password = show_pw_toggle
+
+                if not email:
+                    st.session_state.auth_error = "Please enter your email address."
+                    st.rerun()
+                elif "@" not in email or "." not in email:
+                    st.session_state.auth_error = "Please enter a valid email address."
+                    st.rerun()
+                elif not password:
+                    st.session_state.auth_error = "Please enter your password."
+                    st.rerun()
+                else:
+                    user = db.authenticate_user(email, password)
+                    if user:
+                        st.session_state.user_id = user["id"]
+                        st.session_state.page = "Home"
+                        st.session_state.auth_error = None
+                        st.rerun()
+                    else:
+                        st.session_state.auth_error = "Invalid email or password."
+                        st.rerun()
+
+        st.markdown('<div class="mb-center" style="margin-top: 1.4rem; color: #94a3b8; font-size: 0.92rem;">Don\'t have an account?</div>', unsafe_allow_html=True)
+        st.markdown('<div class="mb-auth-switch-btn">', unsafe_allow_html=True)
+        if st.button("Create Account — Sign Up", key="btn_switch_to_signup", use_container_width=True):
+            st.session_state.auth_mode = "signup"
+            st.session_state.auth_error = None
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # ------------------------------------------------------------------
+    # SIGN UP VIEW
+    # ------------------------------------------------------------------
+    else:
+        st.markdown("""
+        <div class="mb-center">
+            <h1 class="mb-auth-heading">Create Your Account</h1>
+            <p class="mb-auth-subheading">Join us and get started</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if error_msg:
+            st.markdown(f"""
+            <div class="mb-glass-error">
+                <span>⚠️</span>
+                <span>{error_msg}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with st.form("liquid_glass_signup_form", clear_on_submit=False):
+            email = st.text_input(
+                "Email",
+                placeholder="name@example.com",
+                key="input_signup_email",
+            ).strip()
+
+            password = st.text_input(
+                "Password",
+                type="default" if show_pw else "password",
+                placeholder="Enter password (min 6 characters)",
+                key="input_signup_password",
+            )
+
+            confirm_password = st.text_input(
+                "Confirm Password",
+                type="default" if show_pw else "password",
+                placeholder="Re-enter your password",
+                key="input_signup_confirm_password",
+            )
+
+            show_pw_toggle = st.checkbox(
+                "👁️ Show Password",
+                value=show_pw,
+                key="toggle_signup_pw",
+            )
+
+            submitted = st.form_submit_button("Create Account", use_container_width=True)
+
+            if submitted:
+                # Update password visibility preference
+                st.session_state.auth_show_password = show_pw_toggle
+
+                if not email:
+                    st.session_state.auth_error = "Please enter your email address."
+                    st.rerun()
+                elif "@" not in email or "." not in email:
+                    st.session_state.auth_error = "Please enter a valid email address."
+                    st.rerun()
+                elif not password:
+                    st.session_state.auth_error = "Please enter a password."
+                    st.rerun()
+                elif len(password) < 6:
+                    st.session_state.auth_error = "Password must be at least 6 characters long."
+                    st.rerun()
+                elif password != confirm_password:
+                    st.session_state.auth_error = "Passwords do not match."
+                    st.rerun()
+                else:
+                    existing = db.get_user_by_email(email)
+                    if existing:
+                        st.session_state.auth_error = "An account with this email already exists. Please log in."
+                        st.rerun()
+                    else:
+                        new_id = db.register_user(email, password)
+                        st.session_state.user_id = new_id
+                        st.session_state.page = "Home"
+                        st.session_state.auth_error = None
+                        st.rerun()
+
+        st.markdown('<div class="mb-center" style="margin-top: 1.4rem; color: #94a3b8; font-size: 0.92rem;">Already have an account?</div>', unsafe_allow_html=True)
+        st.markdown('<div class="mb-auth-switch-btn">', unsafe_allow_html=True)
+        if st.button("Sign In — Log In", key="btn_switch_to_login", use_container_width=True):
+            st.session_state.auth_mode = "login"
+            st.session_state.auth_error = None
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 # =======================================================================
@@ -134,21 +279,30 @@ def render_sidebar(user):
         st.session_state.page = nav_keys[nav_options.index(choice)]
 
         st.markdown("---")
-        if st.button("🔄 Switch Profile", use_container_width=True):
+        if st.button("🔄 Log Out / Switch Account", use_container_width=True):
             st.session_state.user_id = None
             st.session_state.active_game = None
             st.session_state.caregiver_unlocked = False
+            st.session_state.auth_error = None
+            st.session_state.auth_mode = "login"
             st.rerun()
 
 
 # =======================================================================
-# HOME PAGE
+# HOME PAGE (PREMIUM LIQUID GLASS DASHBOARD)
 # =======================================================================
 
 def render_home(user):
     L = user["language"]
-    st.markdown(f"<h1 class='mb-center'>🌸 {_t('app_name', L)}</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p class='mb-center mb-muted'>{_t('tagline', L)}</p>", unsafe_allow_html=True)
+    
+    # Calculate time-based greeting
+    current_hour = datetime.now().hour
+    if current_hour < 12:
+        greeting = "Good morning"
+    elif current_hour < 17:
+        greeting = "Good afternoon"
+    else:
+        greeting = "Good evening"
 
     history = db.get_game_history(user["id"])
     streak = utils.calculate_streak(history)
@@ -156,40 +310,250 @@ def render_home(user):
         g for g in history
         if g.get("played_at") and datetime.fromisoformat(g["played_at"]).date() == datetime.now().date()
     ]
+    daily_goal = max(1, user.get("daily_goal", 3))
+    progress_pct = min(100, int((len(games_today) / daily_goal) * 100))
+    achievements = db.get_achievements(user["id"])
 
-    col1, col2 = st.columns(2)
-    with col1:
-        utils.card_start()
-        st.markdown(f"<h3 class='mb-center'>🔥 {_t('current_streak', L)}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h1 class='mb-center'>{streak}</h1>", unsafe_allow_html=True)
-        st.markdown("<p class='mb-center mb-muted'>days in a row</p>", unsafe_allow_html=True)
-        utils.card_end()
-    with col2:
-        utils.card_start()
-        st.markdown(f"<h3 class='mb-center'>🎯 {_t('todays_activity', L)}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h1 class='mb-center'>{len(games_today)}/{user['daily_goal']}</h1>", unsafe_allow_html=True)
-        st.markdown("<p class='mb-center mb-muted'>games played today</p>", unsafe_allow_html=True)
-        utils.card_end()
+    # 1. HERO GREETING BANNER
+    st.markdown(f"""
+    <div class="mb-hero-banner">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div class="mb-badge" style="margin-bottom: 0.6rem;">
+                    <span>🌸</span> <span>MindBloom Cognitive Hub</span>
+                </div>
+                <h1 style="margin: 0.2rem 0; font-size: 2.1rem; background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 60%, #cbd5e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {greeting}, {user['name']}!
+                </h1>
+                <p style="color: #94a3b8; margin: 0.4rem 0 0 0; font-size: 1.05rem;">
+                    {_t('tagline', L)} • Keep your focus sharp, active, and blooming today.
+                </p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.write("")
-    if st.button(f"▶️  {_t('start_game', L)}", use_container_width=True, key="home_start_game"):
-        st.session_state.page = "Play"
-        st.session_state.active_game = None
-        st.rerun()
-
-    st.write("")
+    # Audio Read Aloud helper
     voice.read_aloud_button(
-        f"{_t('welcome', L)}, {user['name']}. {_t('tagline', L)}",
+        f"{greeting}, {user['name']}. Welcome to MindBloom. {_t('tagline', L)}",
         language=L,
         key="home_read_aloud",
     )
 
     st.write("")
-    utils.card_start()
-    st.markdown("**🧑‍⚕️ Caregiver?**")
-    if st.button(f"{_t('caregiver_login', L)}", use_container_width=True, key="home_caregiver_login"):
-        st.session_state.page = "Caregiver"
+
+    # 2. KEY STAT TILES (3 COLUMNS)
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.markdown(f"""
+        <div class="mb-stat-tile">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #94a3b8; font-weight: 600; font-size: 0.9rem;">{_t('current_streak', L).upper()}</span>
+                    <span style="font-size: 1.3rem;">🔥</span>
+                </div>
+                <div style="font-size: 2.4rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #f8fafc; margin: 0.4rem 0;">
+                    {streak} <span style="font-size: 1rem; color: #94a3b8; font-weight: 500;">Days</span>
+                </div>
+            </div>
+            <div style="font-size: 0.85rem; color: #38bdf8; font-weight: 500;">
+                {"🔥 On a great streak!" if streak >= 3 else "✨ Play today to build your streak"}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown(f"""
+        <div class="mb-stat-tile">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #94a3b8; font-weight: 600; font-size: 0.9rem;">{_t('todays_activity', L).upper()}</span>
+                    <span style="font-size: 1.3rem;">🎯</span>
+                </div>
+                <div style="font-size: 2.4rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #f8fafc; margin: 0.4rem 0;">
+                    {len(games_today)} <span style="font-size: 1rem; color: #94a3b8; font-weight: 500;">/ {daily_goal} games</span>
+                </div>
+                <div class="mb-progress-track">
+                    <div class="mb-progress-fill" style="width: {progress_pct}%;"></div>
+                </div>
+            </div>
+            <div style="font-size: 0.85rem; color: {'#34d399' if progress_pct >= 100 else '#a78bfa'}; font-weight: 500;">
+                {"🎉 Goal completed for today!" if progress_pct >= 100 else f"🎯 {daily_goal - len(games_today)} more to hit goal"}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+        diff_label = user.get('difficulty', 'Easy')
+        diff_icon = "🌱" if diff_label == "Easy" else ("🌿" if diff_label == "Medium" else "🌳")
+        st.markdown(f"""
+        <div class="mb-stat-tile">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #94a3b8; font-weight: 600; font-size: 0.9rem;">{_t('difficulty', L).upper()} LEVEL</span>
+                    <span style="font-size: 1.3rem;">🧠</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #f8fafc; margin: 0.4rem 0;">
+                    {diff_icon} {diff_label}
+                </div>
+            </div>
+            <div style="font-size: 0.85rem; color: #94a3b8;">
+                {len(history)} total brain sessions played
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.write("")
+
+    # 3. DAILY WORKOUT HERO ACTION
+    st.markdown('<div class="mb-glass-card">', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <h3 style="margin: 0; font-size: 1.35rem; color: #ffffff;">⚡ Daily Cognitive Workout</h3>
+            <p style="margin: 0.2rem 0 0 0; color: #94a3b8; font-size: 0.95rem;">
+                Engage your memory, focus, and reflexes with today's personalized brain training session.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button(f"▶️  {_t('start_game', L)} — Quick Workout", use_container_width=True, key="home_start_workout_btn"):
+        st.session_state.page = "Play"
+        st.session_state.active_game = None
         st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # 4. DIRECT GAME LAUNCHPAD (GRID)
+    st.markdown(f"### 🎮 Quick Game Launchpad")
+    
+    col_g1, col_g2 = st.columns(2)
+    
+    with col_g1:
+        # Game 1: Memory Match
+        st.markdown("""
+        <div class="mb-game-card">
+            <h4 style="margin: 0; color: #f8fafc;">🧩 Memory Match</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin: 0.3rem 0 0.8rem 0;">
+                Flip cards, match pairs, and strengthen your visual recall memory.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Play Memory Match", key="launch_memory_match", use_container_width=True):
+            st.session_state.page = "Play"
+            st.session_state.active_game = "Memory Match"
+            reset_game_state("Memory Match")
+            st.rerun()
+
+        # Game 2: Word Recall
+        st.markdown("""
+        <div class="mb-game-card">
+            <h4 style="margin: 0; color: #f8fafc;">📝 Word Recall</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin: 0.3rem 0 0.8rem 0;">
+                Memorize everyday word lists to stimulate lexical retention.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Play Word Recall", key="launch_word_recall", use_container_width=True):
+            st.session_state.page = "Play"
+            st.session_state.active_game = "Word Recall"
+            reset_game_state("Word Recall")
+            st.rerun()
+
+        # Game 3: Daily Quiz
+        st.markdown("""
+        <div class="mb-game-card">
+            <h4 style="margin: 0; color: #f8fafc;">❓ Daily Quiz</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin: 0.3rem 0 0.8rem 0;">
+                Answer engaging general knowledge questions to keep facts fresh.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Play Daily Quiz", key="launch_daily_quiz", use_container_width=True):
+            st.session_state.page = "Play"
+            st.session_state.active_game = "Daily Quiz"
+            reset_game_state("Daily Quiz")
+            st.rerun()
+
+    with col_g2:
+        # Game 4: Number Memory
+        st.markdown("""
+        <div class="mb-game-card">
+            <h4 style="margin: 0; color: #f8fafc;">🔢 Number Memory</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin: 0.3rem 0 0.8rem 0;">
+                Retain number sequences and boost short-term digit span memory.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Play Number Memory", key="launch_number_memory", use_container_width=True):
+            st.session_state.page = "Play"
+            st.session_state.active_game = "Number Memory"
+            reset_game_state("Number Memory")
+            st.rerun()
+
+        # Game 5: Pattern Recognition
+        st.markdown("""
+        <div class="mb-game-card">
+            <h4 style="margin: 0; color: #f8fafc;">🔁 Pattern Recognition</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin: 0.3rem 0 0.8rem 0;">
+                Identify symbols and patterns to enhance cognitive deduction.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Play Pattern Recognition", key="launch_pattern_rec", use_container_width=True):
+            st.session_state.page = "Play"
+            st.session_state.active_game = "Pattern Recognition"
+            reset_game_state("Pattern Recognition")
+            st.rerun()
+
+        # Caregiver Portal Quick Card
+        st.markdown("""
+        <div class="mb-game-card" style="border-color: rgba(56, 189, 248, 0.25);">
+            <h4 style="margin: 0; color: #38bdf8;">🧑‍⚕️ Caregiver Hub</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin: 0.3rem 0 0.8rem 0;">
+                Access detailed cognitive analytics, accuracy trends & progress.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Open Caregiver Hub", key="home_caregiver_shortcut", use_container_width=True):
+            st.session_state.page = "Caregiver"
+            st.rerun()
+
+    st.write("")
+
+    # 5. TROPHY CABINET / RECENT ACHIEVEMENTS
+    st.markdown("### 🏆 Your Achievements & Trophies")
+    utils.card_start()
+    if achievements:
+        st.markdown("<div style='display: flex; flex-wrap: wrap; gap: 0.6rem;'>", unsafe_allow_html=True)
+        for ach in achievements:
+            icon = utils.ACHIEVEMENT_ICONS.get(ach["achievement"], "🏅")
+            earned_date = ""
+            if ach.get("earned_at"):
+                try:
+                    earned_date = datetime.fromisoformat(ach["earned_at"]).strftime("%b %d")
+                except Exception:
+                    pass
+            st.markdown(f"""
+            <div class="mb-trophy-badge">
+                <span style="font-size: 1.4rem;">{icon}</span>
+                <div>
+                    <div style="font-weight: 700; color: #f8fafc; font-size: 0.95rem;">{ach['achievement']}</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8;">{earned_date if earned_date else 'Unlocked'}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="text-align: center; padding: 1.2rem 0; color: #94a3b8;">
+            <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">🌟</div>
+            <div style="font-weight: 600; color: #f8fafc;">Start Playing to Unlock Badges!</div>
+            <div style="font-size: 0.9rem; margin-top: 0.2rem;">Complete your first game today to earn your first trophy.</div>
+        </div>
+        """, unsafe_allow_html=True)
     utils.card_end()
 
 
@@ -580,7 +944,14 @@ def render_progress(user):
         df["date"] = df["played_at"].dt.date
         daily_counts = df.groupby("date").size().reset_index(name="games")
         fig = px.bar(daily_counts, x="date", y="games", title="Weekly Activity")
-        fig.update_layout(font_size=16)
+        fig.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255,255,255,0.02)",
+            font=dict(color="#e2e8f0", family="Plus Jakarta Sans", size=14),
+            margin=dict(l=20, r=20, t=40, b=20),
+        )
+        fig.update_traces(marker_color="#a855f7")
         st.plotly_chart(fig, use_container_width=True)
     except Exception:
         st.info("Not enough data yet to show a chart.")
@@ -749,16 +1120,40 @@ def render_caregiver(user):
 
         st.markdown("#### Accuracy Over Time")
         fig1 = px.line(df.sort_values("played_at"), x="played_at", y="accuracy", markers=True)
+        fig1.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255,255,255,0.02)",
+            font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
+            margin=dict(l=20, r=20, t=30, b=20),
+        )
+        fig1.update_traces(line=dict(color="#38bdf8", width=3), marker=dict(size=8, color="#818cf8"))
         st.plotly_chart(fig1, use_container_width=True)
 
         st.markdown("#### Games Completed Per Day")
         daily_counts = df.groupby("date").size().reset_index(name="games")
         fig2 = px.bar(daily_counts, x="date", y="games")
+        fig2.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255,255,255,0.02)",
+            font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
+            margin=dict(l=20, r=20, t=30, b=20),
+        )
+        fig2.update_traces(marker_color="#a855f7")
         st.plotly_chart(fig2, use_container_width=True)
 
         st.markdown("#### Score by Game Type")
         by_game = df.groupby("game_name")["score"].mean().reset_index()
         fig3 = px.bar(by_game, x="game_name", y="score")
+        fig3.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255,255,255,0.02)",
+            font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
+            margin=dict(l=20, r=20, t=30, b=20),
+        )
+        fig3.update_traces(marker_color="#34d399")
         st.plotly_chart(fig3, use_container_width=True)
     except Exception:
         st.info("Not enough data yet to render charts.")
@@ -774,8 +1169,14 @@ def render_caregiver(user):
 
 def main():
     if st.session_state.user_id is None:
-        render_profile_selector()
+        render_auth_page()
         return
+
+    # Apply logged-in app theming
+    utils.apply_custom_style(
+        font_size=st.session_state.font_size,
+        high_contrast=st.session_state.high_contrast,
+    )
 
     user = db.get_user(st.session_state.user_id)
     if user is None:
