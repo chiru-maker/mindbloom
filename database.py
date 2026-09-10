@@ -105,8 +105,27 @@ def init_db():
         )
     """)
 
+    # Seed demo account on fresh database deployments
+    cur.execute("SELECT COUNT(*) FROM users")
+    count = cur.fetchone()[0]
+    if count == 0:
+        pwd_hash = hash_password("password123")
+        cur.execute("""
+            INSERT INTO users (name, email, password_hash, age, language, difficulty, daily_goal, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, ("Anandi Sharma", "demo@mindbloom.com", pwd_hash, 72, "English", "Easy", 3, datetime.now().isoformat()))
+        demo_id = cur.lastrowid
+        cur.execute("""
+            INSERT INTO reminders (user_id, reminder_time, enabled)
+            VALUES (?, ?, ?)
+        """, (demo_id, "09:30", 1))
+
     conn.commit()
     conn.close()
+
+    # Load initial demo telemetry if fresh demo user was created
+    if count == 0:
+        load_demo_data(demo_id)
 
 
 # ---------------------------------------------------------------------

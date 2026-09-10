@@ -755,6 +755,278 @@ def apply_liquid_glass_auth_style():
     """, unsafe_allow_html=True)
 
 
+def apply_caregiver_dashboard_style():
+    """
+    Injects a unique, high-tech Medical-Grade Neurotech background and UI styling
+    specifically tailored for the Caregiver & Clinician Dashboard.
+    """
+    st.markdown("""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        /* Custom Caregiver Ambient Cyber-Grid & Neuro Aurora Background */
+        .stApp {
+            background-color: #030712 !important;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.18) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.22) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.14) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.16) 0px, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
+            background-attachment: fixed !important;
+        }
+
+        /* Caregiver Header Banner */
+        .mb-cg-banner {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.14) 0%, rgba(15, 23, 42, 0.85) 60%, rgba(99, 102, 241, 0.16) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 20px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 1.6rem;
+            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.12);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        .mb-cg-banner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+            animation: cgShimmer 8s infinite linear;
+        }
+        @keyframes cgShimmer {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        /* Medical Telemetry Cards */
+        .mb-cg-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(30, 41, 59, 0.45) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            border-radius: 18px;
+            padding: 1.4rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 1rem;
+        }
+        .mb-cg-card:hover {
+            border-color: rgba(56, 189, 248, 0.45);
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 20px rgba(6, 182, 212, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Status Live Indicator Badge */
+        .mb-cg-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 9999px;
+            padding: 4px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #34d399;
+            letter-spacing: 0.04em;
+        }
+        .mb-cg-pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #34d399;
+            animation: cgPulse 1.8s infinite ease-in-out;
+        }
+        @keyframes cgPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.5; }
+        }
+
+        /* Telemetry Metric Tile */
+        .mb-cg-metric-tile {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 3px solid #06b6d4;
+            border-radius: 14px;
+            padding: 1.1rem 1.3rem;
+            margin-bottom: 0.8rem;
+            transition: all 0.25s ease;
+        }
+        .mb-cg-metric-tile:hover {
+            border-left-color: #38bdf8;
+            background: rgba(15, 23, 42, 0.85);
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Caregiver PIN Vault Card */
+        .mb-cg-vault-box {
+            max-width: 480px;
+            margin: 2.5rem auto;
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.6) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            border-radius: 24px;
+            padding: 2.4rem 2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.18);
+            backdrop-filter: blur(28px);
+            text-align: center;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def apply_home_style():
+    """
+    Botanical Bloom & Morning Sanctuary Background (Warm Lotus, Mint Emerald & Morning Gold).
+    """
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #030a0d !important;
+            background-image: 
+                radial-gradient(at 10% 15%, rgba(244, 114, 182, 0.18) 0px, transparent 45%),
+                radial-gradient(at 90% 20%, rgba(52, 211, 153, 0.20) 0px, transparent 50%),
+                radial-gradient(at 50% 85%, rgba(251, 191, 36, 0.14) 0px, transparent 55%),
+                radial-gradient(at 85% 90%, rgba(167, 139, 250, 0.16) 0px, transparent 50%),
+                radial-gradient(rgba(52, 211, 153, 0.08) 1.5px, transparent 1.5px) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 32px 32px !important;
+            background-attachment: fixed !important;
+        }
+        .mb-hero-banner {
+            border: 1px solid rgba(244, 114, 182, 0.25) !important;
+            background: linear-gradient(135deg, rgba(244, 114, 182, 0.12) 0%, rgba(15, 23, 42, 0.85) 50%, rgba(52, 211, 153, 0.12) 100%) !important;
+            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 25px rgba(244, 114, 182, 0.12) !important;
+        }
+        .mb-stat-tile {
+            border-top: 3px solid #34d399 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def apply_play_style():
+    """
+    Cyber-Arcade & Cognitive Arena Background (Electric Cyan & Neon Fuchsia Matrix).
+    """
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #080318 !important;
+            background-image: 
+                radial-gradient(at 15% 10%, rgba(236, 72, 153, 0.24) 0px, transparent 50%),
+                radial-gradient(at 85% 15%, rgba(6, 182, 212, 0.26) 0px, transparent 50%),
+                radial-gradient(at 50% 60%, rgba(147, 51, 234, 0.20) 0px, transparent 60%),
+                radial-gradient(at 20% 90%, rgba(59, 130, 246, 0.22) 0px, transparent 50%),
+                radial-gradient(rgba(236, 72, 153, 0.12) 1.5px, transparent 1.5px),
+                linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px, 28px 28px !important;
+            background-attachment: fixed !important;
+        }
+        .mb-card, .mb-game-card {
+            background: linear-gradient(135deg, rgba(26, 16, 51, 0.8) 0%, rgba(15, 10, 36, 0.6) 100%) !important;
+            border: 1px solid rgba(236, 72, 153, 0.25) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(236, 72, 153, 0.1) !important;
+        }
+        .mb-card:hover, .mb-game-card:hover {
+            border-color: rgba(6, 182, 212, 0.5) !important;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.25) !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def apply_progress_style():
+    """
+    Celestial Galaxy & Astral Ascent Background (Deep Nebula Starlight & Royal Sapphire).
+    """
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #020617 !important;
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(37, 99, 235, 0.28) 0px, transparent 50%),
+                radial-gradient(at 80% 25%, rgba(168, 85, 247, 0.25) 0px, transparent 50%),
+                radial-gradient(at 50% 80%, rgba(234, 179, 8, 0.18) 0px, transparent 55%),
+                radial-gradient(at 90% 85%, rgba(56, 189, 248, 0.20) 0px, transparent 50%),
+                radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 40px 40px !important;
+            background-attachment: fixed !important;
+        }
+        .mb-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.5) 100%) !important;
+            border: 1px solid rgba(59, 130, 246, 0.25) !important;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55), 0 0 20px rgba(37, 99, 235, 0.15) !important;
+        }
+        .mb-badge {
+            background: rgba(234, 179, 8, 0.15) !important;
+            border: 1px solid rgba(234, 179, 8, 0.45) !important;
+            color: #fef08a !important;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.2) !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def apply_reminders_style():
+    """
+    Zen Twilight Sunset & Chronos Horizon Background (Coral Amber & Twilight Lavender).
+    """
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #0c051a !important;
+            background-image: 
+                radial-gradient(at 10% 25%, rgba(249, 115, 22, 0.26) 0px, transparent 50%),
+                radial-gradient(at 85% 20%, rgba(225, 29, 72, 0.22) 0px, transparent 50%),
+                radial-gradient(at 50% 70%, rgba(139, 92, 246, 0.24) 0px, transparent 55%),
+                radial-gradient(at 90% 90%, rgba(251, 146, 60, 0.18) 0px, transparent 50%),
+                radial-gradient(circle at center, transparent 30%, rgba(249, 115, 22, 0.04) 31%, transparent 32%) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 60px 60px !important;
+            background-attachment: fixed !important;
+        }
+        .mb-card {
+            background: linear-gradient(135deg, rgba(30, 15, 45, 0.8) 0%, rgba(20, 10, 35, 0.6) 100%) !important;
+            border: 1px solid rgba(249, 115, 22, 0.3) !important;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55), 0 0 20px rgba(249, 115, 22, 0.15) !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def apply_settings_style():
+    """
+    Titanium Obsidian & Precision Studio Background (Brushed Slate & Ice Cobalt Grid).
+    """
+    st.markdown("""
+    <style>
+        .stApp {
+            background-color: #080c14 !important;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.18) 0px, transparent 45%),
+                radial-gradient(at 100% 0%, rgba(148, 163, 184, 0.18) 0px, transparent 50%),
+                radial-gradient(at 50% 90%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(15, 118, 110, 0.15) 0px, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 24px 24px, 24px 24px !important;
+            background-attachment: fixed !important;
+        }
+        .mb-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.55) 100%) !important;
+            border: 1px solid rgba(148, 163, 184, 0.25) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.1) !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 def card_start():
     st.markdown('<div class="mb-card">', unsafe_allow_html=True)
 

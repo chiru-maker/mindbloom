@@ -22,6 +22,7 @@ import database as db
 import utils
 import games
 import voice
+import liquid_chrome
 from adaptive_engine import calculate_adaptive_difficulty, get_difficulty_settings
 from translations import get_text as _t
 
@@ -82,15 +83,18 @@ def render_auth_page():
 
     st.markdown('<div class="mb-auth-wrapper"><div class="mb-glass-panel">', unsafe_allow_html=True)
 
-    # Floating Glowing Brand Header
-    st.markdown("""
-    <div class="mb-center">
-        <div class="mb-brand-badge">
-            <span class="mb-brand-logo">🌸</span>
-            <span class="mb-brand-title">MindBloom</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Floating Glowing Brand Header with Interactive LiquidChrome
+    liquid_chrome.render_liquid_chrome(
+        base_color=[0.1, 0.1, 0.1],
+        speed=0.3,
+        amplitude=0.4,
+        frequency_x=2.5,
+        frequency_y=2.5,
+        interactive=True,
+        height=140,
+        border_radius="14px",
+        overlay_html="<div style='font-size:1.5rem; font-weight:800; letter-spacing:0.04em;'>🌸 MindBloom</div><div style='font-size:0.82rem; opacity:0.85; margin-top:2px;'>Interactive Liquid Surface • Move cursor to ripple</div>"
+    )
 
     # ------------------------------------------------------------------
     # LOGIN VIEW
@@ -157,7 +161,19 @@ def render_auth_page():
                         st.session_state.auth_error = "Invalid email or password."
                         st.rerun()
 
-        st.markdown('<div class="mb-center" style="margin-top: 1.4rem; color: #94a3b8; font-size: 0.92rem;">Don\'t have an account?</div>', unsafe_allow_html=True)
+        st.markdown('<div class="mb-center" style="margin-top: 1.1rem; color: #94a3b8; font-size: 0.85rem;">— OR QUICK DEMO MODE —</div>', unsafe_allow_html=True)
+        if st.button("🚀 1-Click Demo Login (Anandi Sharma • 72y)", key="btn_quick_demo_login", use_container_width=True):
+            users = db.get_all_users()
+            demo_u = next((u for u in users if u.get("email") == "demo@mindbloom.com"), None)
+            if not demo_u and users:
+                demo_u = users[0]
+            if demo_u:
+                st.session_state.user_id = demo_u["id"]
+                st.session_state.page = "Home"
+                st.session_state.auth_error = None
+                st.rerun()
+
+        st.markdown('<div class="mb-center" style="margin-top: 1.2rem; color: #94a3b8; font-size: 0.92rem;">Don\'t have an account?</div>', unsafe_allow_html=True)
         st.markdown('<div class="mb-auth-switch-btn">', unsafe_allow_html=True)
         if st.button("Create Account — Sign Up", key="btn_switch_to_signup", use_container_width=True):
             st.session_state.auth_mode = "signup"
@@ -293,6 +309,7 @@ def render_sidebar(user):
 # =======================================================================
 
 def render_home(user):
+    utils.apply_home_style()
     L = user["language"]
     
     # Calculate time-based greeting
@@ -556,6 +573,52 @@ def render_home(user):
         """, unsafe_allow_html=True)
     utils.card_end()
 
+    # 6. LIQUID CHROME RELAXATION & SENSORY ZONE
+    st.write("")
+    st.markdown("### 🌊 Liquid Chrome Sensory Relaxation")
+    st.caption("Interact with the liquid surface to soothe stress, stimulate motor reflexes, and relax.")
+    
+    with st.expander("🎨 Customize Liquid Canvas & Shaders", expanded=False):
+        c_col1, c_col2 = st.columns(2)
+        with c_col1:
+            theme_choice = st.selectbox(
+                "Color Theme Preset",
+                ["Deep Space ([0.1, 0.1, 0.1])", "Emerald Bloom ([0.05, 0.35, 0.25])", "Calming Indigo ([0.15, 0.18, 0.45])", "Sunset Amber ([0.4, 0.18, 0.1])"],
+                index=0,
+                key="lc_theme_select"
+            )
+            lc_speed = st.slider("Animation Speed", min_value=0.05, max_value=2.0, value=0.3, step=0.05, key="lc_speed_slider")
+        with c_col2:
+            lc_amp = st.slider("Distortion Amplitude", min_value=0.1, max_value=1.5, value=0.4, step=0.05, key="lc_amp_slider")
+            lc_freq = st.slider("Wave Frequency", min_value=1.0, max_value=6.0, value=3.0, step=0.5, key="lc_freq_slider")
+        
+        theme_map = {
+            "Deep Space ([0.1, 0.1, 0.1])": [0.1, 0.1, 0.1],
+            "Emerald Bloom ([0.05, 0.35, 0.25])": [0.05, 0.35, 0.25],
+            "Calming Indigo ([0.15, 0.18, 0.45])": [0.15, 0.18, 0.45],
+            "Sunset Amber ([0.4, 0.18, 0.1])": [0.4, 0.18, 0.1],
+        }
+        chosen_color = theme_map.get(theme_choice, [0.1, 0.1, 0.1])
+
+    # If expander was not opened/customized, use default params
+    if "lc_theme_select" not in st.session_state:
+        chosen_color = [0.1, 0.1, 0.1]
+        lc_speed = 0.3
+        lc_amp = 0.4
+        lc_freq = 3.0
+
+    liquid_chrome.render_liquid_chrome(
+        base_color=chosen_color,
+        speed=lc_speed,
+        amplitude=lc_amp,
+        frequency_x=lc_freq,
+        frequency_y=lc_freq,
+        interactive=True,
+        height=320,
+        border_radius="16px",
+        overlay_html="<div style='font-size:1.4rem; font-weight:700; text-shadow:0 3px 10px rgba(0,0,0,0.7);'>🌸 MindBloom • Interactive Liquid Canvas</div><div style='font-size:0.88rem; opacity:0.85; margin-top:4px;'>Move your cursor or touch to create calming liquid waves</div>"
+    )
+
 
 # =======================================================================
 # PLAY PAGE - GAME SELECTION
@@ -572,7 +635,13 @@ GAME_LIST = [
 
 def render_play_selector(user):
     L = user["language"]
-    st.markdown(f"<h1 class='mb-center'>🎮 {_t('games', L)}</h1>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.18) 0%, rgba(30, 16, 60, 0.8) 50%, rgba(6, 182, 212, 0.18) 100%); border: 1px solid rgba(236, 72, 153, 0.35); border-radius: 20px; padding: 1.5rem 1.8rem; margin-bottom: 1.5rem; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.5), 0 0 20px rgba(236, 72, 153, 0.15);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.2rem;">🎮</div>
+        <h1 style="margin: 0; font-size: 1.9rem; background: linear-gradient(135deg, #ffffff, #f472b6, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{_t('games', L)} • Cognitive Arena</h1>
+        <p style="color: #cbd5e1; margin-top: 0.3rem; font-size: 0.95rem;">Select any brain exercise below to stimulate visual recall, numbers, words, and logical deductions.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     for name, icon, desc in GAME_LIST:
         utils.card_start()
@@ -885,6 +954,7 @@ GAME_RUNNERS = {
 
 
 def render_play_page(user):
+    utils.apply_play_style()
     if st.session_state.active_game is None:
         render_play_selector(user)
     else:
@@ -906,8 +976,16 @@ def render_play_page(user):
 # =======================================================================
 
 def render_progress(user):
+    utils.apply_progress_style()
     L = user["language"]
-    st.markdown(f"<h1 class='mb-center'>📈 {_t('progress', L)}</h1>", unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, rgba(15, 23, 42, 0.85) 50%, rgba(168, 85, 247, 0.2) 100%); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 20px; padding: 1.5rem 1.8rem; margin-bottom: 1.5rem; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.5), 0 0 20px rgba(37, 99, 235, 0.18);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.2rem;">📈</div>
+        <h1 style="margin: 0; font-size: 1.9rem; background: linear-gradient(135deg, #ffffff, #93c5fd, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{_t('progress', L)} • Celestial Orbit</h1>
+        <p style="color: #cbd5e1; margin-top: 0.3rem; font-size: 0.95rem;">Track your long-term cognitive milestones, accuracy evolution, and earned trophies.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     history = db.get_game_history(user["id"])
 
@@ -974,8 +1052,16 @@ def render_progress(user):
 # =======================================================================
 
 def render_reminders(user):
+    utils.apply_reminders_style()
     L = user["language"]
-    st.markdown(f"<h1 class='mb-center'>⏰ {_t('reminder', L)}</h1>", unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(30, 15, 45, 0.85) 50%, rgba(139, 92, 246, 0.2) 100%); border: 1px solid rgba(249, 115, 22, 0.35); border-radius: 20px; padding: 1.5rem 1.8rem; margin-bottom: 1.5rem; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.5), 0 0 20px rgba(249, 115, 22, 0.18);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.2rem;">⏰</div>
+        <h1 style="margin: 0; font-size: 1.9rem; background: linear-gradient(135deg, #ffffff, #fdba74, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{_t('reminder', L)} • Daily Zen Schedule</h1>
+        <p style="color: #cbd5e1; margin-top: 0.3rem; font-size: 0.95rem;">Configure your peaceful daily routine and gentle audio notifications.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     reminder = db.get_reminder(user["id"]) or {"reminder_time": "09:00", "enabled": 0}
 
@@ -1009,8 +1095,16 @@ def render_reminders(user):
 # =======================================================================
 
 def render_settings(user):
+    utils.apply_settings_style()
     L = user["language"]
-    st.markdown(f"<h1 class='mb-center'>⚙️ {_t('settings', L)}</h1>", unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(15, 23, 42, 0.85) 50%, rgba(99, 102, 241, 0.16) 100%); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 20px; padding: 1.5rem 1.8rem; margin-bottom: 1.5rem; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.5), 0 0 20px rgba(56, 189, 248, 0.12);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.2rem;">⚙️</div>
+        <h1 style="margin: 0; font-size: 1.9rem; background: linear-gradient(135deg, #ffffff, #94a3b8, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{_t('settings', L)} • Accessibility Studio</h1>
+        <p style="color: #cbd5e1; margin-top: 0.3rem; font-size: 0.95rem;">Personalize language, high contrast, typography scaling, and adaptive parameters.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     utils.card_start()
     st.markdown(f"### {_t('select_language', L)}")
@@ -1059,39 +1153,78 @@ def render_settings(user):
 # =======================================================================
 
 def render_caregiver(user):
-    st.markdown("<h1 class='mb-center'>🧑‍⚕️ Caregiver Dashboard</h1>", unsafe_allow_html=True)
-    st.caption("This is a demo login for hackathon purposes only - not a secure production login system.")
+    utils.apply_caregiver_dashboard_style()
+
+    # Medical Telemetry LiquidChrome Hero Banner
+    liquid_chrome.render_liquid_chrome(
+        base_color=[0.05, 0.25, 0.35],
+        speed=0.22,
+        amplitude=0.4,
+        frequency_x=3.0,
+        frequency_y=2.0,
+        interactive=True,
+        height=165,
+        border_radius="18px",
+        overlay_html="<div style='font-size:1.6rem; font-weight:800; letter-spacing:0.04em;'>🧑‍⚕️ MindBloom Caregiver Hub</div><div style='font-size:0.85rem; opacity:0.9; margin-top:4px;'>Clinical Cognitive Telemetry & Long-Term Retention Insights</div>"
+    )
 
     if not st.session_state.caregiver_unlocked:
-        utils.card_start()
-        pin = st.text_input("Enter Caregiver PIN (demo: 1234)", type="password")
-        if st.button("🔓 Unlock Dashboard", use_container_width=True):
+        st.markdown("""
+        <div class="mb-cg-vault-box">
+            <div style="font-size: 3rem; margin-bottom: 0.8rem;">🔒</div>
+            <h2 style="font-size: 1.6rem; color: #ffffff; margin-bottom: 0.3rem;">Clinician & Caregiver Portal</h2>
+            <p style="color: #94a3b8; font-size: 0.92rem; margin-bottom: 1.4rem;">
+                Enter your authorized 4-digit security PIN to inspect cognitive telemetry, accuracy trends, and engagement reports.
+            </p>
+        """, unsafe_allow_html=True)
+        
+        pin = st.text_input("Security PIN (Demo: 1234)", type="password", key="cg_pin_input")
+        if st.button("🔓 Unlock Caregiver Dashboard", use_container_width=True, key="btn_unlock_cg"):
             if pin == "1234":
                 st.session_state.caregiver_unlocked = True
                 st.rerun()
             else:
-                st.error("Incorrect PIN. Please try again.")
-        utils.card_end()
+                st.error("⚠️ Incorrect PIN. Please try again.")
+        st.markdown("</div>", unsafe_allow_html=True)
         return
+
+    # Unlocked Caregiver Dashboard Header
+    st.markdown("""
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 1rem 0;">
+        <div class="mb-cg-status-badge">
+            <span class="mb-cg-pulse-dot"></span>
+            <span>TELEMETRY STREAM ACTIVE</span>
+        </div>
+        <div style="color: #94a3b8; font-size: 0.85rem;">
+            Cognitive Assistance & Monitoring Protocol • SIH 2026
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     users = db.get_all_users()
     if not users:
-        st.info("No user profiles yet.")
+        st.info("No user profiles available in database.")
         return
 
-    names = [u["name"] for u in users]
-    selected_name = st.selectbox("Select User", names, index=names.index(user["name"]) if user["name"] in names else 0)
-    selected_user = next(u for u in users if u["name"] == selected_name)
-
-    if st.button("🧪 Load Demo Data (for presentation)", use_container_width=True):
-        db.load_demo_data(selected_user["id"])
-        st.success("Demo data loaded! (Clearly marked as demo data for presentation purposes.)")
-        st.rerun()
+    st.markdown('<div class="mb-cg-card">', unsafe_allow_html=True)
+    c_sel1, c_sel2 = st.columns([3, 2])
+    with c_sel1:
+        names = [u["name"] for u in users]
+        selected_name = st.selectbox("Select Patient Profile", names, index=names.index(user["name"]) if user["name"] in names else 0)
+        selected_user = next(u for u in users if u["name"] == selected_name)
+    with c_sel2:
+        st.write("")
+        st.write("")
+        if st.button("🧪 Load Presentation Demo Data", use_container_width=True, key="btn_load_cg_demo"):
+            db.load_demo_data(selected_user["id"])
+            st.success("Telemetry dataset refreshed!")
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
     history = db.get_game_history(selected_user["id"])
 
     if not history:
-        st.info("No activity yet for this user. Use 'Load Demo Data' above for a presentation-ready view.")
+        st.info("No activity telemetry logged yet for this patient. Click 'Load Presentation Demo Data' above.")
         return
 
     total_games = len(history)
@@ -1101,66 +1234,197 @@ def render_caregiver(user):
     reminder = db.get_reminder(selected_user["id"])
     last_activity = history[0]["played_at"] if history else "N/A"
 
+    # Top Clinical Metric Cards (2 rows of 3)
     col1, col2, col3 = st.columns(3)
-    col1.metric("Games Completed", total_games)
-    col2.metric("Average Score", avg_score)
-    col3.metric("Accuracy", f"{avg_accuracy}%")
+    with col1:
+        st.markdown(f"""
+        <div class="mb-cg-metric-tile">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">TOTAL SESSIONS</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #38bdf8; font-family: 'Outfit', sans-serif;">{total_games}</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">Games Completed</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        acc_color = "#34d399" if avg_accuracy >= 75 else ("#facc15" if avg_accuracy >= 50 else "#f87171")
+        st.markdown(f"""
+        <div class="mb-cg-metric-tile" style="border-left-color: {acc_color};">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">MEAN ACCURACY</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: {acc_color}; font-family: 'Outfit', sans-serif;">{avg_accuracy}%</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">Retention benchmark</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="mb-cg-metric-tile" style="border-left-color: #818cf8;">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">AVERAGE SCORE</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #818cf8; font-family: 'Outfit', sans-serif;">{avg_score}</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">Points per round</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     col4, col5, col6 = st.columns(3)
-    col4.metric("Current Streak", f"{streak} days")
-    col5.metric("Difficulty Level", selected_user["difficulty"])
-    col6.metric("Reminder", "On" if reminder and reminder["enabled"] else "Off")
+    with col4:
+        st.markdown(f"""
+        <div class="mb-cg-metric-tile" style="border-left-color: #f97316;">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">CONSISTENCY STREAK</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fb923c; font-family: 'Outfit', sans-serif;">{streak} Days</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">Active habit adherence</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col5:
+        st.markdown(f"""
+        <div class="mb-cg-metric-tile" style="border-left-color: #a855f7;">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">ADAPTIVE DIFFICULTY</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #c084fc; font-family: 'Outfit', sans-serif;">{selected_user['difficulty']}</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">Auto-calibrated level</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col6:
+        rem_status = "Active" if reminder and reminder["enabled"] else "Disabled"
+        rem_color = "#34d399" if rem_status == "Active" else "#94a3b8"
+        st.markdown(f"""
+        <div class="mb-cg-metric-tile" style="border-left-color: {rem_color};">
+            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">DAILY REMINDER</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: {rem_color}; font-family: 'Outfit', sans-serif;">{rem_status}</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">{reminder.get('reminder_time', 'N/A') if reminder else 'Not set'}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.caption(f"Last activity: {last_activity}")
+    st.caption(f"Last recorded telemetry session: {last_activity}")
 
     try:
         df = pd.DataFrame(history)
         df["played_at"] = pd.to_datetime(df["played_at"])
         df["date"] = df["played_at"].dt.date
 
-        st.markdown("#### Accuracy Over Time")
+        # Accuracy Trend Graph
+        st.markdown('<div class="mb-cg-card">', unsafe_allow_html=True)
+        st.markdown("#### 📈 Longitudinal Cognitive Accuracy Trend")
         fig1 = px.line(df.sort_values("played_at"), x="played_at", y="accuracy", markers=True)
         fig1.update_layout(
             template="plotly_dark",
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(255,255,255,0.02)",
+            plot_bgcolor="rgba(6, 182, 212, 0.03)",
             font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
             margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(gridcolor="rgba(255,255,255,0.06)", title="Session Timestamp"),
+            yaxis=dict(gridcolor="rgba(255,255,255,0.06)", title="Accuracy (%)", range=[0, 105]),
         )
-        fig1.update_traces(line=dict(color="#38bdf8", width=3), marker=dict(size=8, color="#818cf8"))
+        fig1.update_traces(line=dict(color="#06b6d4", width=3.5), marker=dict(size=8, color="#38bdf8", symbol="circle"))
         st.plotly_chart(fig1, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("#### Games Completed Per Day")
-        daily_counts = df.groupby("date").size().reset_index(name="games")
-        fig2 = px.bar(daily_counts, x="date", y="games")
-        fig2.update_layout(
-            template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(255,255,255,0.02)",
-            font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
-            margin=dict(l=20, r=20, t=30, b=20),
-        )
-        fig2.update_traces(marker_color="#a855f7")
-        st.plotly_chart(fig2, use_container_width=True)
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.markdown('<div class="mb-cg-card">', unsafe_allow_html=True)
+            st.markdown("#### 📅 Daily Session Frequency")
+            daily_counts = df.groupby("date").size().reset_index(name="games")
+            fig2 = px.bar(daily_counts, x="date", y="games")
+            fig2.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(168, 85, 247, 0.03)",
+                font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
+                margin=dict(l=20, r=20, t=30, b=20),
+                xaxis=dict(gridcolor="rgba(255,255,255,0.06)", title="Date"),
+                yaxis=dict(gridcolor="rgba(255,255,255,0.06)", title="Games Played"),
+            )
+            fig2.update_traces(marker_color="#8b5cf6")
+            st.plotly_chart(fig2, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("#### Score by Game Type")
-        by_game = df.groupby("game_name")["score"].mean().reset_index()
-        fig3 = px.bar(by_game, x="game_name", y="score")
-        fig3.update_layout(
-            template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(255,255,255,0.02)",
-            font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
-            margin=dict(l=20, r=20, t=30, b=20),
-        )
-        fig3.update_traces(marker_color="#34d399")
-        st.plotly_chart(fig3, use_container_width=True)
+        with col_g2:
+            st.markdown('<div class="mb-cg-card">', unsafe_allow_html=True)
+            st.markdown("#### 🎮 Mean Performance by Domain")
+            by_game = df.groupby("game_name")["score"].mean().reset_index()
+            fig3 = px.bar(by_game, x="game_name", y="score")
+            fig3.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(16, 185, 129, 0.03)",
+                font=dict(color="#e2e8f0", family="Plus Jakarta Sans"),
+                margin=dict(l=20, r=20, t=30, b=20),
+                xaxis=dict(gridcolor="rgba(255,255,255,0.06)", title="Cognitive Domain"),
+                yaxis=dict(gridcolor="rgba(255,255,255,0.06)", title="Average Score"),
+            )
+            fig3.update_traces(marker_color="#10b981")
+            st.plotly_chart(fig3, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
     except Exception:
-        st.info("Not enough data yet to render charts.")
+        st.info("Not enough telemetry logged yet to render analytical charts.")
 
-    st.markdown("#### Recent Activity")
+    st.markdown('<div class="mb-cg-card">', unsafe_allow_html=True)
+    st.markdown("#### 📋 Recent Session Logs (Audit Trail)")
     recent_df = pd.DataFrame(history[:10])[["game_name", "score", "accuracy", "difficulty", "played_at"]]
+    recent_df.columns = ["Game Type", "Score", "Accuracy (%)", "Difficulty", "Played At"]
     st.dataframe(recent_df, use_container_width=True, hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Clinical Cognitive Telemetry Report Generator & Export
+    st.markdown('<div class="mb-cg-card">', unsafe_allow_html=True)
+    st.markdown("#### 📄 Clinical Cognitive Telemetry Report (Export)")
+    st.caption("Generate a structured assessment report formatted for consultations with neurologists, physicians, and caregivers.")
+    
+    if st.button("⚡ Generate Clinical Summary Report", key="btn_gen_clinical_report", use_container_width=True):
+        st.session_state.show_clinical_report = True
+
+    if st.session_state.get("show_clinical_report", False):
+        report_text = f"""================================================================================
+MINDBLOOM COGNITIVE TELEMETRY REPORT • CLINICAL SUMMARY
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Protocol: SIH26003 AI-Based Cognitive Gaming & Memory Platform
+================================================================================
+
+1. PATIENT PROFILE
+------------------
+Name:                {selected_user['name']}
+Patient ID:          MB-{selected_user['id']:04d}
+Age:                 {selected_user.get('age', 72)}
+Preferred Language:  {selected_user.get('language', 'English')}
+Active Difficulty:   {selected_user.get('difficulty', 'Easy')}
+Daily Goal:          {selected_user.get('daily_goal', 3)} sessions/day
+
+2. LONGITUDINAL TELEMETRY SUMMARY
+---------------------------------
+Total Game Sessions: {total_games}
+Mean Accuracy:       {avg_accuracy}%
+Mean Session Score:  {avg_score} pts
+Habit Streak:        {streak} consecutive days
+Daily Reminder:      {reminder.get('reminder_time', 'N/A') if reminder and reminder['enabled'] else 'Disabled'}
+Last Activity:       {last_activity}
+
+3. COGNITIVE DOMAIN BREAKDOWN
+-----------------------------
+"""
+        try:
+            by_game_dict = df.groupby("game_name").agg({"accuracy": "mean", "score": "mean", "response_time": "mean"}).to_dict("index")
+            for g_name, metrics in by_game_dict.items():
+                report_text += f"- {g_name:<20}: Mean Accuracy {metrics['accuracy']:.1f}% | Avg Score {metrics['score']:.1f} | Avg Reaction {metrics.get('response_time', 0):.1f}s\n"
+        except Exception:
+            report_text += "- Telemetry data aggregated across standard cognitive exercises.\n"
+
+        report_text += f"""
+4. CLINICAL OBSERVATIONS & CARE RECOMMENDATIONS
+-----------------------------------------------
+- Adherence Index:    {'High (Active daily engagement)' if streak >= 3 else 'Moderate (Encourage daily routine)'}
+- Retention Profile:  {'Consistent high recall across sessions' if avg_accuracy >= 75 else 'Mild variance observed in complex patterns'}
+- Recommendation:     Continue regular multi-sensory stimulation sessions (Word Recall + Memory Match).
+                      Maintain gentle daily routine reminders at {reminder.get('reminder_time', '09:00') if reminder else '09:00'}.
+
+================================================================================
+Confidential Medical Telemetry • For Educational/Prototype Evaluation Purposes
+================================================================================
+"""
+        st.text_area("Report Preview", report_text, height=280)
+        st.download_button(
+            label="📥 Download Clinical Report (.txt)",
+            data=report_text,
+            file_name=f"MindBloom_Cognitive_Report_{selected_user['name'].replace(' ', '_')}.txt",
+            mime="text/plain",
+            use_container_width=True,
+            key="btn_download_report_txt"
+        )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # =======================================================================
